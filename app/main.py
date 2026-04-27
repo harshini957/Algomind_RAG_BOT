@@ -1,7 +1,7 @@
 import logging
 from fastapi import FastAPI
-from app.api.routes import health, ingest, query, evaluate
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes import health, ingest, query, evaluate
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,18 +24,19 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
 
-    # register all routes under /api/v1
+    # CORS must be added before routes
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     app.include_router(health.router,   prefix="/api/v1", tags=["Health"])
     app.include_router(ingest.router,   prefix="/api/v1", tags=["Ingestion"])
     app.include_router(query.router,    prefix="/api/v1", tags=["Query"])
     app.include_router(evaluate.router, prefix="/api/v1", tags=["Evaluation"])
-
-    app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-    )
 
     @app.on_event("startup")
     async def startup():
