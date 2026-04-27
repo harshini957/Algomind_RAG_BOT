@@ -12,11 +12,13 @@ from qdrant_client.models import (
     Prefetch,
     FusionQuery,
     Fusion,
+    PayloadSchemaType,
 )
 from app.config import settings
 from app.core.chunker import ParentChunk, ChildChunk
 import logging
 import uuid
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +39,19 @@ class VectorStore:
 
     parent_chunks collection is payload-only.
     Retrieved by parent_id filter after child matches.
+    A keyword payload index on parent_id is created at
+    startup — required for FieldCondition filtering.
     """
 
     def __init__(self):
+        api_key   = os.environ.get("QDRANT_API_KEY", "")
+        use_https = bool(api_key)
+
         self.client = QdrantClient(
             host=settings.qdrant_host,
-            port=settings.qdrant_port
+            port=settings.qdrant_port,
+            api_key=api_key if api_key else None,
+            https=use_https,
         )
         self._ensure_collections()
 
@@ -58,6 +67,20 @@ class VectorStore:
             logger.info(f"[VectorStore] Created: {settings.parent_collection}")
         else:
             logger.info(f"[VectorStore] Exists: {settings.parent_collection}")
+
+        # --- payload index on parent_id ---
+        # required before using FieldCondition filter on parent_id
+        # Qdrant raises 400 Bad Request if you filter on an unindexed field
+        try:
+            self.client.create_payload_index(
+                collection_name=settings.parent_collection,
+                field_name="parent_id",
+                field_schema=PayloadSchemaType.KEYWORD,
+            )
+            logger.info("[VectorStore] Created payload index on parent_id")
+        except Exception as e:
+            # index already exists — safe to ignore
+            logger.info(f"[VectorStore] Payload index already exists: {e}")
 
         # --- child_chunks: dense + sparse hybrid ---
         if settings.child_collection not in existing:
@@ -75,7 +98,9 @@ class VectorStore:
                     )
                 }
             )
-            logger.info(f"[VectorStore] Created hybrid: {settings.child_collection}")
+            logger.info(
+                f"[VectorStore] Created hybrid: {settings.child_collection}"
+            )
         else:
             logger.info(f"[VectorStore] Exists: {settings.child_collection}")
 
@@ -169,7 +194,6 @@ class VectorStore:
         - dense prefetch  : semantic cosine search
         - sparse prefetch : BM25 keyword search
         - RRF fusion      : merges both ranked lists
-        uses `using` parameter to specify which vector space
         """
         results = self.client.query_points(
             collection_name=settings.child_collection,

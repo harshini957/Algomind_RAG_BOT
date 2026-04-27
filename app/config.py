@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # --- Qdrant ---
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
+    qdrant_api_key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIiwic3ViamVjdCI6ImFwaS1rZXk6ZmNjMzI4MGMtNjU1My00ODcyLWJmYjEtNjI2NjJlOGY1NDk2In0.2GTJB7yRJ28k68zpG732jPyNgzzxJlMmOnR0m2xFHsw" 
     parent_collection: str = "parent_chunks"
     child_collection: str = "child_chunks"
 
