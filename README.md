@@ -450,6 +450,6 @@ CHILD_OVERLAP_TOKENS=20
 ## Author
 
 **Harshini** — AI/ML Engineer  
-[GitHub](https://github.com/harshini957) · [LinkedIn](https://linkedin.com/in/harshini)
+[GitHub](https://github.com/harshini957) · [LinkedIn](https://www.linkedin.com/in/harshini-n-d-a6040b22a/)
 
 Built as a production learning project to understand every component of a RAG system from raw PDF to deployed API on Google Cloud Run.
